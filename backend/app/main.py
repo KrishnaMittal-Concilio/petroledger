@@ -127,6 +127,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 #        except Exception as exc:
 #            logger.warning("Enum validation skipped: %s", exc)
 
+    # Idempotent superadmin seed — runs on every boot, no-op if user exists.
+    if settings.SUPERADMIN_EMAIL and settings.SUPERADMIN_PASSWORD:
+        try:
+            from scripts.seed_superadmin import seed as _seed_superadmin
+            await _seed_superadmin()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Superadmin seed skipped: %s", exc)
+
     yield  # ← application runs here
 
     # ── Shutdown ────────────────────────────────────────────────────
@@ -293,12 +301,25 @@ async def unhandled_exception_handler(
     )
 
 
-# ── Health Check ────────────────────────────────────────────────────────
+# ── Root & Health ──────────────────────────────────────────────────────
+
+
+@app.get("/", include_in_schema=False)
+@app.head("/", include_in_schema=False)
+async def root():
+    """Service info. Also answers uptime probes (GET/HEAD /)."""
+    return {
+        "service": "petroledger-api",
+        "version": settings.APP_VERSION,
+        "status": "ok",
+        "docs": "/docs" if settings.show_docs else None,
+    }
 
 
 @app.get("/health")
+@app.head("/health", include_in_schema=False)
 async def health_check():
-    """Health check endpoint for Railway."""
+    """Liveness probe used by Render and load balancers."""
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT,
