@@ -224,6 +224,54 @@ export const providerApi = {
       .patch<ProviderSettings>("/provider/settings", body)
       .then((r) => r.data),
 
+  // ── Features ──────────────────────────────────────────────────────
+  getTenantFeatures: (id: string): Promise<TenantFeatureItem[]> =>
+    api
+      .get<TenantFeatureItem[]>(`/provider/organizations/${id}/features`)
+      .then((r) => r.data),
+
+  setFeatureOverride: (
+    id: string,
+    featureId: number,
+    enabled: boolean,
+    reason?: string,
+  ): Promise<TenantFeatureItem> =>
+    api
+      .put<TenantFeatureItem>(`/provider/organizations/${id}/features/${featureId}`, {
+        enabled,
+        reason: reason ?? null,
+      })
+      .then((r) => r.data),
+
+  clearFeatureOverride: (id: string, featureId: number): Promise<{ message: string }> =>
+    api
+      .delete<{ message: string }>(`/provider/organizations/${id}/features/${featureId}`)
+      .then((r) => r.data),
+
+  // ── Payment Config ─────────────────────────────────────────────────
+  getPaymentConfig: (id: string): Promise<PaymentConfigResponse> =>
+    api
+      .get<PaymentConfigResponse>(`/provider/organizations/${id}/payment-config`)
+      .then((r) => r.data),
+
+  savePaymentConfig: (
+    id: string,
+    payload: { gateway: string; key_id: string; key_secret: string; webhook_secret?: string },
+  ): Promise<PaymentConfigResponse> =>
+    api
+      .post<PaymentConfigResponse>(`/provider/organizations/${id}/payment-config`, payload)
+      .then((r) => r.data),
+
+  deletePaymentConfig: (id: string): Promise<{ message: string }> =>
+    api
+      .delete<{ message: string }>(`/provider/organizations/${id}/payment-config`)
+      .then((r) => r.data),
+
+  togglePaymentConfig: (id: string): Promise<PaymentConfigResponse> =>
+    api
+      .put<PaymentConfigResponse>(`/provider/organizations/${id}/payment-config/toggle`)
+      .then((r) => r.data),
+
   // ── Legacy aliases (kept for the existing pages in /provider/) ─────
   stats: (): Promise<ProviderStats> =>
     api.get<ProviderStats>("/provider/stats").then((r) => r.data),
