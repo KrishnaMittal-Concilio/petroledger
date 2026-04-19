@@ -11,7 +11,7 @@ import {
   MessageSquare,
   UserPlus,
 } from "lucide-react";
-import { Card, Button } from "../../components/ui";
+import { Button, Card } from "../../components/ui";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import {
   AccessRequest,
@@ -20,10 +20,10 @@ import {
 } from "../../api/access-requests";
 
 const STATUS_BADGE: Record<AccessRequestStatus, string> = {
-  NEW: "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30",
-  CONTACTED: "bg-sky-400/15 text-sky-300 ring-1 ring-sky-400/30",
-  APPROVED: "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30",
-  REJECTED: "bg-red-400/15 text-red-300 ring-1 ring-red-400/30",
+  NEW: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  CONTACTED: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+  APPROVED: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  REJECTED: "bg-red-50 text-red-700 ring-1 ring-red-200",
 };
 
 const STATUSES: AccessRequestStatus[] = [
@@ -91,14 +91,14 @@ export default function AccessRequestDetailPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
         {error}
       </div>
     );
   }
 
   if (!req) {
-    return <div className="text-ink-400 text-sm">Loading…</div>;
+    return <div className="text-slate-500 text-sm">Loading…</div>;
   }
 
   const status = req.status as AccessRequestStatus;
@@ -109,7 +109,7 @@ export default function AccessRequestDetailPage() {
         <button
           type="button"
           onClick={() => navigate("/provider/access-requests")}
-          className="inline-flex items-center gap-2 text-sm text-ink-400 hover:text-white"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to requests
@@ -122,21 +122,23 @@ export default function AccessRequestDetailPage() {
       </div>
 
       <Card>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">{req.full_name}</h1>
-            <p className="mt-1 text-ink-400">{req.company}</p>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {req.full_name}
+            </h1>
+            <p className="mt-1 text-slate-500">{req.company}</p>
           </div>
           <div className="flex gap-2">
             <a
               href={`mailto:${req.email}`}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-700 bg-ink-900 text-sm hover:bg-ink-800"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50"
             >
               <Mail className="h-4 w-4" /> Email
             </a>
             <a
               href={`tel:${req.phone}`}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-ink-700 bg-ink-900 text-sm hover:bg-ink-800"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50"
             >
               <Phone className="h-4 w-4" /> Call
             </a>
@@ -144,36 +146,24 @@ export default function AccessRequestDetailPage() {
         </div>
 
         <dl className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-ink-500">Email</dt>
-            <dd className="mt-1 text-ink-100">{req.email}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-ink-500">Phone</dt>
-            <dd className="mt-1 text-ink-100 font-mono">{req.phone}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-ink-500">Pumps</dt>
-            <dd className="mt-1 text-ink-100">{req.pump_count_range}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wider text-ink-500">Location</dt>
-            <dd className="mt-1 text-ink-100">
-              {req.city}, {req.state}
-            </dd>
-          </div>
+          <Field label="Email" value={req.email} />
+          <Field label="Phone" value={req.phone} mono />
+          <Field label="Pumps" value={req.pump_count_range} />
+          <Field label="Location" value={`${req.city}, ${req.state}`} />
           <div className="sm:col-span-2">
-            <dt className="text-xs uppercase tracking-wider text-ink-500">Submitted</dt>
-            <dd className="mt-1 text-ink-100">
+            <dt className="text-xs uppercase tracking-wider text-slate-500">
+              Submitted
+            </dt>
+            <dd className="mt-1 text-slate-900">
               {new Date(req.created_at).toLocaleString()}
             </dd>
           </div>
           {req.message && (
             <div className="sm:col-span-2">
-              <dt className="text-xs uppercase tracking-wider text-ink-500">
+              <dt className="text-xs uppercase tracking-wider text-slate-500">
                 Message
               </dt>
-              <dd className="mt-1 text-ink-100 whitespace-pre-wrap leading-relaxed">
+              <dd className="mt-1 text-slate-900 whitespace-pre-wrap leading-relaxed">
                 {req.message}
               </dd>
             </div>
@@ -182,7 +172,7 @@ export default function AccessRequestDetailPage() {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-400">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
           Quick actions
         </h2>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -213,7 +203,7 @@ export default function AccessRequestDetailPage() {
         </div>
 
         <div className="mt-6">
-          <label className="block text-xs uppercase tracking-wider text-ink-400 mb-2">
+          <label className="block text-xs uppercase tracking-wider text-slate-500 mb-2">
             Status
           </label>
           <select
@@ -222,10 +212,10 @@ export default function AccessRequestDetailPage() {
             onChange={(e) =>
               updateStatus(e.target.value as AccessRequestStatus)
             }
-            className="w-48 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm"
+            className="w-48 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s} className="bg-ink-900">
+              <option key={s} value={s}>
                 {s}
               </option>
             ))}
@@ -235,11 +225,11 @@ export default function AccessRequestDetailPage() {
 
       <Card>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
             Provider notes
           </h2>
           {savingNotes && (
-            <Loader2 className="h-4 w-4 animate-spin text-ink-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
           )}
         </div>
         <textarea
@@ -248,10 +238,14 @@ export default function AccessRequestDetailPage() {
           onChange={(e) => setNotes(e.target.value)}
           onBlur={saveNotes}
           placeholder="Internal notes (autosaves on blur)…"
-          className="mt-3 w-full rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-100 outline-none focus:border-amber-400/60"
+          className="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400"
         />
         <div className="mt-3 flex justify-end">
-          <Button variant="secondary" onClick={saveNotes} disabled={savingNotes}>
+          <Button
+            variant="secondary"
+            onClick={saveNotes}
+            disabled={savingNotes}
+          >
             Save notes
           </Button>
         </div>
@@ -260,9 +254,7 @@ export default function AccessRequestDetailPage() {
       <ConfirmDialog
         open={confirmApprove}
         title="Approve and create tenant?"
-        message={
-          "Approving marks this request APPROVED. Creating the tenant + owner login is still a manual step in the Organizations section. Continue?"
-        }
+        message="Approving marks this request APPROVED. Creating the tenant + owner login is still a manual step in the Tenants section."
         confirmLabel="Approve"
         onCancel={() => setConfirmApprove(false)}
         onConfirm={async () => {
@@ -273,19 +265,42 @@ export default function AccessRequestDetailPage() {
               <span className="text-sm">
                 Next step:{" "}
                 <Link
-                  to="/provider/organizations"
+                  to="/provider/tenants"
                   onClick={() => toast.dismiss(t.id)}
-                  className="text-amber-300 underline"
+                  className="text-indigo-600 underline"
                 >
                   create the tenant manually
                 </Link>
                 .
               </span>
             ),
-            { icon: <UserPlus className="h-4 w-4 text-emerald-300" /> },
+            { icon: <UserPlus className="h-4 w-4 text-emerald-500" /> },
           );
         }}
       />
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-slate-500">
+        {label}
+      </dt>
+      <dd
+        className={`mt-1 text-slate-900 ${mono ? "font-mono" : ""}`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { Card } from "../../components/ui";
+import { PageHeader } from "../../components/ui/PageHeader";
 import {
   AccessRequest,
   AccessRequestStatus,
@@ -17,10 +17,10 @@ const STATUS_FILTERS: { label: string; value: AccessRequestStatus | "" }[] = [
 ];
 
 const STATUS_BADGE: Record<AccessRequestStatus, string> = {
-  NEW: "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30",
-  CONTACTED: "bg-sky-400/15 text-sky-300 ring-1 ring-sky-400/30",
-  APPROVED: "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30",
-  REJECTED: "bg-red-400/15 text-red-300 ring-1 ring-red-400/30",
+  NEW: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  CONTACTED: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+  APPROVED: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  REJECTED: "bg-red-50 text-red-700 ring-1 ring-red-200",
 };
 
 function relativeTime(iso: string): string {
@@ -76,15 +76,13 @@ export default function AccessRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Access Requests</h1>
-        <p className="mt-1 text-ink-400 text-sm">
-          Public ERP access requests submitted from the marketing site.
-        </p>
-      </div>
+      <PageHeader
+        title="Access Requests"
+        description="Public ERP access requests submitted from the marketing site."
+      />
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1 rounded-lg border border-ink-800 bg-ink-900/50 p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
           {STATUS_FILTERS.map((f) => (
             <button
               key={f.label}
@@ -95,8 +93,8 @@ export default function AccessRequestsPage() {
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
                 statusFilter === f.value
-                  ? "bg-amber-400 text-slate-950"
-                  : "text-ink-300 hover:text-white hover:bg-ink-800"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {f.label}
@@ -104,7 +102,7 @@ export default function AccessRequestsPage() {
           ))}
         </div>
         <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(e) => {
@@ -112,91 +110,90 @@ export default function AccessRequestsPage() {
               setPage(1);
             }}
             placeholder="Search name, email, company…"
-            className="w-full rounded-lg border border-ink-800 bg-ink-900/60 pl-9 pr-3 py-2 text-sm text-ink-50 placeholder:text-ink-500 outline-none focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
           />
         </div>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <Card className="p-0 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-ink-900/80 text-xs uppercase text-ink-400">
-            <tr>
-              <th className="text-left px-4 py-3">Submitted</th>
-              <th className="text-left px-4 py-3">Name</th>
-              <th className="text-left px-4 py-3">Company</th>
-              <th className="text-left px-4 py-3">Email</th>
-              <th className="text-left px-4 py-3">Phone</th>
-              <th className="text-left px-4 py-3">Pumps</th>
-              <th className="text-left px-4 py-3">Location</th>
-              <th className="text-left px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && items.length === 0 ? (
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-ink-500">
-                  Loading…
-                </td>
+                <th className="text-left px-4 py-3">Submitted</th>
+                <th className="text-left px-4 py-3">Name</th>
+                <th className="text-left px-4 py-3">Company</th>
+                <th className="text-left px-4 py-3">Email</th>
+                <th className="text-left px-4 py-3">Phone</th>
+                <th className="text-left px-4 py-3">Pumps</th>
+                <th className="text-left px-4 py-3">Location</th>
+                <th className="text-left px-4 py-3">Status</th>
               </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-ink-500">
-                  No requests match your filters.
-                </td>
-              </tr>
-            ) : (
-              items.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-t border-ink-800 hover:bg-ink-900/40 transition"
-                >
-                  <td className="px-4 py-3 text-ink-400 text-xs">
-                    <Link to={`/provider/access-requests/${r.id}`}>
-                      {relativeTime(r.created_at)}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    <Link
-                      to={`/provider/access-requests/${r.id}`}
-                      className="hover:text-amber-300"
-                    >
-                      {r.full_name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-ink-300">{r.company}</td>
-                  <td className="px-4 py-3 text-ink-300">{r.email}</td>
-                  <td className="px-4 py-3 text-ink-300 font-mono text-xs">
-                    {r.phone}
-                  </td>
-                  <td className="px-4 py-3 text-ink-300">
-                    {r.pump_count_range}
-                  </td>
-                  <td className="px-4 py-3 text-ink-300 text-xs">
-                    {r.city}, {r.state}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider ${
-                        STATUS_BADGE[r.status as AccessRequestStatus]
-                      }`}
-                    >
-                      {r.status}
-                    </span>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading && items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    Loading…
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </Card>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    No requests match your filters.
+                  </td>
+                </tr>
+              ) : (
+                items.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-slate-500 text-xs">
+                      <Link to={`/provider/access-requests/${r.id}`}>
+                        {relativeTime(r.created_at)}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link
+                        to={`/provider/access-requests/${r.id}`}
+                        className="text-slate-900 hover:text-indigo-600"
+                      >
+                        {r.full_name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{r.company}</td>
+                    <td className="px-4 py-3 text-slate-600">{r.email}</td>
+                    <td className="px-4 py-3 text-slate-600 font-mono text-xs">
+                      {r.phone}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {r.pump_count_range}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">
+                      {r.city}, {r.state}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider ${
+                          STATUS_BADGE[r.status as AccessRequestStatus]
+                        }`}
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <div className="flex items-center justify-between text-xs text-ink-400">
+      <div className="flex items-center justify-between text-xs text-slate-500">
         <div>
           {total} total · page {page} of {totalPages}
         </div>
@@ -205,7 +202,7 @@ export default function AccessRequestsPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-3 py-1.5 rounded-md border border-ink-800 disabled:opacity-40 hover:bg-ink-800"
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white disabled:opacity-40 hover:bg-slate-50"
           >
             Previous
           </button>
@@ -213,7 +210,7 @@ export default function AccessRequestsPage() {
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="px-3 py-1.5 rounded-md border border-ink-800 disabled:opacity-40 hover:bg-ink-800"
+            className="px-3 py-1.5 rounded-md border border-slate-200 bg-white disabled:opacity-40 hover:bg-slate-50"
           >
             Next
           </button>

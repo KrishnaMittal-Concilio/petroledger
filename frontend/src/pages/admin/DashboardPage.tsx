@@ -55,16 +55,23 @@ export default function AdminDashboardPage() {
       setLoading(true);
       try {
         const [shiftsRes, anomaliesRes, varianceRes] = await Promise.all([
-          adminApi.getShifts({ page: 1, page_size: 10 }),
-          adminApi.getAnomalies({ page: 1, page_size: 5 }),
+          adminApi.getShifts({ page: 1, page_size: 10, org_id: selectedOrgId }),
+          adminApi
+            .getAnomalies({
+              site_id: selectedOrgId,
+              is_resolved: false,
+              page: 1,
+              page_size: 5,
+            })
+            .catch(() => ({ items: [], total: 0 })),
           adminApi.getVarianceTrend(selectedOrgId, 30).catch(() => []),
         ]);
         if (cancel) return;
         setShifts(shiftsRes.items);
         setShiftsTotal(shiftsRes.total);
-        setFlags(anomaliesRes.items.filter((a) => !a.resolved_at).slice(0, 5));
+        setFlags(anomaliesRes.items.slice(0, 5));
         const total = varianceRes.reduce(
-          (acc, r) => acc + Number(r.variance ?? 0),
+          (acc, r) => acc + Number(r.total_variance ?? 0),
           0,
         );
         setVarianceTotal(total);
@@ -228,7 +235,7 @@ export default function AdminDashboardPage() {
                       {f.flag_type}
                     </div>
                     <div className="text-xs text-slate-500 truncate">
-                      {f.description ?? "—"}
+                      {f.description}
                     </div>
                   </div>
                   <span

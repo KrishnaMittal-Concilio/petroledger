@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { Search } from "lucide-react";
-import { Badge, Card } from "../../components/ui";
-import { Spinner } from "../../components/ui/Spinner";
-import { providerApi, type ProviderUserItem } from "../../api/provider";
+import { Badge } from "../../components/ui";
+import { Select } from "../../components/ui/Select";
+import { DataTable, Pagination } from "../../components/ui/DataTable";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { providerApi, ProviderUserItem } from "../../api/provider";
 
 const ROLES = ["", "owner", "admin", "manager", "worker", "superadmin", "provider"];
+
+function errMsg(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: { detail?: string } }; message?: string };
+  return e?.response?.data?.detail || e?.message || fallback;
+}
 
 export default function ProviderUsersPage() {
   const [items, setItems] = useState<ProviderUserItem[]>([]);
@@ -12,148 +20,146 @@ export default function ProviderUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [loading, setLoading] = useState(true);
   const pageSize = 50;
 
-  useEffect(() => {
+  async function load() {
     setLoading(true);
-    setError(null);
-    providerApi
-      .users({
+    try {
+      const r = await providerApi.getUsers({
         page,
         page_size: pageSize,
         search: search || undefined,
         role: role || undefined,
-      })
-      .then((r) => {
-        setItems(r.items);
-        setTotal(r.total);
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
+      });
+      setItems(r.items);
+      setTotal(r.total);
+    } catch (err) {
+      toast.error(errMsg(err, "Failed to load users."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search, role]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  async function toggleActive(u: ProviderUserItem) {
+    try {
+      if (u.is_active) {
+        await providerApi.deactivateUser(u.id);
+        toast.success("User deactivated.");
+      } else {
+        await providerApi.reactivateUser(u.id);
+        toast.success("User reactivated.");
+      }
+      void load();
+    } catch (err) {
+      toast.error(errMsg(err, "Failed to update user."));
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Users</h1>
-        <p className="mt-1 text-ink-400 text-sm">
-          All users across all tenants. Filter by role or search by email.
-        </p>
-      </div>
+      <PageHeader
+        title="Users"
+        description="All users across all tenants."
+      />
 
-      <Card className="p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
-            <input
-              value={search}
-              onChange={(e) => {
-                setPage(1);
-                setSearch(e.target.value);
-              }}
-              placeholder="Search email…"
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-ink-700 bg-ink-900/60 text-sm outline-none focus:border-brand-400"
-            />
-          </div>
-          <select
-            value={role}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="relative sm:col-span-2">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
             onChange={(e) => {
               setPage(1);
-              setRole(e.target.value);
+              setSearch(e.target.value);
             }}
-            className="rounded-lg border border-ink-700 bg-ink-900/60 px-3 py-2 text-sm"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r === "" ? "All roles" : r}
-              </option>
-            ))}
-          </select>
-          <div className="text-sm text-ink-500">
-            {total.toLocaleString()} user{total === 1 ? "" : "s"}
-          </div>
+            placeholder="Search email…"
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 outline-none focus:border-slate-400"
+          />
         </div>
-      </Card>
+        <Select
+          value={role}
+          onChange={(e) => {
+            setPage(1);
+            setRole(e.target.value);
+          }}
+        >
+          <option value="">All roles</option>
+          {ROLES.filter(Boolean).map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-          {error}
-        </div>
-      )}
+      <DataTable<ProviderUserItem>
+        data={items}
+        loading={loading}
+        rowKey={(u) => u.id}
+        emptyState="No users match these filters."
+        columns={[
+          {
+            key: "email",
+            header: "Email",
+            render: (u) => (
+              <span className="font-medium text-slate-900">{u.email}</span>
+            ),
+          },
+          {
+            key: "role",
+            header: "Role",
+            render: (u) => <Badge tone="indigo">{u.role}</Badge>,
+          },
+          {
+            key: "tenant",
+            header: "Tenant",
+            render: (u) => u.tenant_name ?? "—",
+          },
+          {
+            key: "last_login",
+            header: "Last login",
+            render: (u) =>
+              u.last_login
+                ? new Date(u.last_login).toLocaleString()
+                : "Never",
+          },
+          {
+            key: "status",
+            header: "Status",
+            render: (u) => (
+              <Badge tone={u.is_active ? "green" : "slate"}>
+                {u.is_active ? "active" : "inactive"}
+              </Badge>
+            ),
+          },
+          {
+            key: "actions",
+            header: "",
+            align: "right",
+            render: (u) => (
+              <button
+                type="button"
+                onClick={() => void toggleActive(u)}
+                className="text-xs text-indigo-600 hover:text-indigo-500"
+              >
+                {u.is_active ? "Deactivate" : "Reactivate"}
+              </button>
+            ),
+          },
+        ]}
+      />
 
-      <Card className="p-0 overflow-hidden">
-        {loading ? (
-          <div className="p-8">
-            <Spinner label="Loading users…" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="p-8 text-center text-sm text-ink-500">
-            No users match these filters.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-ink-900/80 text-xs uppercase text-ink-400">
-              <tr>
-                <th className="text-left px-5 py-3">Email</th>
-                <th className="text-left px-5 py-3">Role</th>
-                <th className="text-left px-5 py-3">Tenant</th>
-                <th className="text-left px-5 py-3">Last login</th>
-                <th className="text-left px-5 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((u) => (
-                <tr key={u.id} className="border-t border-ink-800">
-                  <td className="px-5 py-3 font-medium">{u.email}</td>
-                  <td className="px-5 py-3">
-                    <Badge tone="blue">{u.role}</Badge>
-                  </td>
-                  <td className="px-5 py-3 text-ink-300">
-                    {u.tenant_name ?? "—"}
-                  </td>
-                  <td className="px-5 py-3 text-ink-400">
-                    {u.last_login
-                      ? new Date(u.last_login).toLocaleString()
-                      : "Never"}
-                  </td>
-                  <td className="px-5 py-3">
-                    <Badge tone={u.is_active ? "green" : "slate"}>
-                      {u.is_active ? "active" : "inactive"}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Card>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="rounded-lg border border-ink-700 px-3 py-1.5 hover:bg-ink-800 disabled:opacity-40"
-          >
-            Previous
-          </button>
-          <div className="text-ink-400">
-            Page {page} of {totalPages}
-          </div>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            className="rounded-lg border border-ink-700 px-3 py-1.5 hover:bg-ink-800 disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

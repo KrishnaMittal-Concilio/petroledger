@@ -26,7 +26,7 @@ export interface Pump {
   id: string;
   org_id: string;
   name: string;
-  code: string | null;
+  code?: string | null;
   location?: string | null;
   nozzle_count: number;
   is_active: boolean;
@@ -38,15 +38,15 @@ export interface Pump {
 export interface PumpCreatePayload {
   org_id: string;
   name: string;
-  code?: string;
   location?: string;
   nozzle_count: number;
+  nozzles?: Array<{ nozzle_number: number; fuel_type: string }>;
 }
 
 export interface PumpUpdatePayload {
   name?: string;
-  code?: string;
   location?: string;
+  nozzle_count?: number;
   is_active?: boolean;
 }
 
@@ -61,14 +61,17 @@ export interface Worker {
   employee_code: string;
   joined_date: string | null;
   is_active?: boolean;
+  created_at?: string;
 }
 
+/** Two-step worker creation payload: the API client handles both calls. */
 export interface WorkerCreatePayload {
   email: string;
   password: string;
   pump_id: string;
   employee_code: string;
-  joined_date?: string;
+  joined_date: string; // YYYY-MM-DD
+  org_id?: string;
 }
 
 export interface WorkerUpdatePayload {
@@ -114,22 +117,31 @@ export interface ReconciliationResult {
 
 export interface AnomalyFlag {
   id: string;
-  shift_id: string;
+  site_id: string;
+  shift_id: string | null;
+  attendant_id?: string | null;
   flag_type: string;
   severity: string;
-  description?: string | null;
+  description: string;
   amount?: string | number | null;
+  is_resolved: boolean;
   resolved_at?: string | null;
+  resolved_by?: string | null;
+  resolution_note?: string | null;
   created_at: string;
 }
 
 export interface AuditLogItem {
   id: string;
   user_id: string | null;
-  resource_type: string;
+  entity_type: string;
+  entity_id: string;
   action: string;
-  changes?: Record<string, unknown> | null;
+  before_state?: Record<string, unknown> | null;
+  after_state?: Record<string, unknown> | null;
   ip_address?: string | null;
+  org_id?: string | null;
+  tenant_id?: string | null;
   created_at: string;
 }
 
@@ -138,45 +150,67 @@ export interface AuditLogItem {
  * -------------------------------------------------------------------- */
 
 export interface VarianceTrendRow {
-  day: string;
-  variance: number;
+  date: string;
+  total_variance: string;
+  shortage_count: number;
+  excess_count: number;
 }
 
 export interface GradeSalesRow {
-  day: string;
-  fuel_grade: string;
-  liters: number;
-  revenue: number;
+  date: string;
+  fuel_type: string;
+  volume: string;
+  amount: string;
 }
 
 export interface CashflowRow {
-  day: string;
-  cash: number;
-  upi: number;
-  card: number;
-  fleet: number;
+  date: string;
+  cash: string;
+  upi: string;
+  card: string;
+  fleet: string;
 }
 
 /* ----------------------------------------------------------------------
  * Inventory & Maintenance
  * -------------------------------------------------------------------- */
 
-export interface InventoryItem {
+export interface Tank {
   id: string;
   org_id: string;
+  tank_number: number;
   fuel_type: string;
-  quantity: number;
-  updated_at: string;
+  capacity_litres: string | number;
+  current_level_litres: string | number;
+  low_level_threshold: string | number;
+  last_dip_reading_at: string | null;
+  is_active: boolean;
 }
 
-export interface MaintenanceItem {
+export interface DipReadingPayload {
+  reading_date: string; // YYYY-MM-DD
+  reading_litres: number;
+  temperature_celsius?: number;
+  notes?: string;
+}
+
+export interface Downtime {
   id: string;
   pump_id: string;
-  type: string;
-  scheduled_date: string | null;
-  completed_date: string | null;
-  notes?: string | null;
+  org_id: string;
+  started_at: string;
+  ended_at: string | null;
+  reason_type: string;
+  description: string | null;
+  created_by_user_id: string | null;
   created_at: string;
+}
+
+export interface DowntimeStartPayload {
+  pump_id: string;
+  reason_type: string;
+  description?: string;
+  started_at?: string;
 }
 
 /* ----------------------------------------------------------------------
@@ -187,7 +221,7 @@ export const adminApi = {
   // ── Pumps ─────────────────────────────────────────────────────────
   getPumps: (params?: { org_id?: string; page?: number; page_size?: number }) =>
     api
-      .get<Paged<Pump> | Pump[]>("/pumps/", { params })
+      .get<Paged<Pump>>("/pumps/", { params })
       .then((r) => r.data),
   getPump: (id: string) =>
     api.get<Pump>(`/pumps/${id}`).then((r) => r.data),
@@ -201,14 +235,36 @@ export const adminApi = {
   // ── Workers ───────────────────────────────────────────────────────
   getWorkers: (params?: {
     pump_id?: string;
+    org_id?: string;
     page?: number;
     page_size?: number;
   }) =>
     api
-      .get<Paged<Worker> | Worker[]>("/workers/", { params })
+      .get<Paged<Worker>>("/workers/", { params })
       .then((r) => r.data),
-  createWorker: (payload: WorkerCreatePayload) =>
-    api.post<Worker>("/workers/", payload).then((r) => r.data),
+
+  /** Two-step worker creation: create user, then worker profile. */
+  createWorker: async (payload: WorkerCreatePayload) => {
+    // Step 1: create user with role=worker
+    const userRes = await api.post<{
+      id: string;
+      email: string;
+    }>("/users/", {
+      email: payload.email,
+      password: payload.password,
+      role: "worker",
+      org_id: payload.org_id,
+    });
+    // Step 2: create worker profile linked to that user
+    return api
+      .post<Worker>("/workers/", {
+        user_id: userRes.data.id,
+        pump_id: payload.pump_id,
+        employee_code: payload.employee_code,
+        joined_date: payload.joined_date,
+      })
+      .then((r) => r.data);
+  },
   updateWorker: (id: string, payload: WorkerUpdatePayload) =>
     api.patch<Worker>(`/workers/${id}`, payload).then((r) => r.data),
   deleteWorker: (id: string) =>
@@ -228,7 +284,7 @@ export const adminApi = {
       .get<ReconciliationResult>(`/reconciliation/shifts/${shiftId}`)
       .then((r) => r.data),
   getReconciliationQueue: (params?: {
-    status?: string;
+    org_id?: string;
     page?: number;
     page_size?: number;
   }) =>
@@ -237,34 +293,43 @@ export const adminApi = {
         params: { status: "COMPLETED", ...params },
       })
       .then((r) => r.data),
-  runReconciliation: (shiftId: string) =>
+  runReconciliation: (shiftId: string, actualCash: number) =>
     api
-      .post<ReconciliationResult>(`/reconciliation/shifts/${shiftId}/run`)
+      .post<ReconciliationResult>(`/reconciliation/shifts/${shiftId}/run`, {
+        actual_cash: actualCash,
+      })
       .then((r) => r.data),
 
   // ── Anomalies ─────────────────────────────────────────────────────
-  getAnomalies: (params?: {
+  getAnomalies: (params: {
+    site_id: string;
+    shift_id?: string;
+    is_resolved?: boolean;
     severity?: string;
-    resolved?: boolean;
+    flag_type?: string;
     page?: number;
     page_size?: number;
   }) =>
     api
       .get<Paged<AnomalyFlag>>("/anomaly-flags/", { params })
       .then((r) => r.data),
-  resolveAnomaly: (id: string, notes?: string) =>
+  getAnomaly: (id: string) =>
+    api.get<AnomalyFlag>(`/anomaly-flags/${id}`).then((r) => r.data),
+  resolveAnomaly: (id: string, resolutionNote: string) =>
     api
-      .patch<AnomalyFlag>(`/anomaly-flags/${id}`, {
-        resolved_at: new Date().toISOString(),
-        resolution_notes: notes,
+      .patch<AnomalyFlag>(`/anomaly-flags/${id}/resolve`, {
+        resolution_note: resolutionNote,
       })
       .then((r) => r.data),
 
   // ── Audit Logs ────────────────────────────────────────────────────
   getAuditLogs: (params?: {
-    resource_type?: string;
+    org_id?: string;
+    entity_type?: string;
     action?: string;
     user_id?: string;
+    start_date?: string;
+    end_date?: string;
     page?: number;
     page_size?: number;
   }) =>
@@ -297,41 +362,41 @@ export const adminApi = {
       })
       .then((r) => r.data),
 
-  // ── Inventory ─────────────────────────────────────────────────────
-  getInventory: (params?: { org_id?: string }) =>
+  // ── Inventory (Fuel Tanks) ────────────────────────────────────────
+  getTanks: (params?: { org_id?: string }) =>
     api
-      .get<Paged<InventoryItem> | InventoryItem[]>("/inventory/", {
-        params,
-      })
+      .get<Paged<Tank>>("/inventory/tanks", { params })
       .then((r) => r.data),
-  updateInventory: (
-    id: string,
-    payload: { quantity: number; fuel_type?: string },
-  ) =>
-    api.patch<InventoryItem>(`/inventory/${id}`, payload).then((r) => r.data),
-
-  // ── Maintenance ───────────────────────────────────────────────────
-  getMaintenance: (params?: { pump_id?: string }) =>
-    api
-      .get<Paged<MaintenanceItem> | MaintenanceItem[]>("/maintenance/", {
-        params,
-      })
-      .then((r) => r.data),
-  createMaintenance: (payload: {
-    pump_id: string;
-    type: string;
-    scheduled_date?: string;
-    notes?: string;
+  createTank: (payload: {
+    org_id: string;
+    tank_number: number;
+    fuel_type: string;
+    capacity_litres: number;
+    low_level_threshold?: number;
   }) =>
-    api.post<MaintenanceItem>("/maintenance/", payload).then((r) => r.data),
-  updateMaintenance: (
-    id: string,
-    payload: {
-      type?: string;
-      scheduled_date?: string;
-      completed_date?: string;
-      notes?: string;
-    },
-  ) =>
-    api.patch<MaintenanceItem>(`/maintenance/${id}`, payload).then((r) => r.data),
+    api.post<Tank>("/inventory/tanks", payload).then((r) => r.data),
+  createDipReading: (tankId: string, payload: DipReadingPayload) =>
+    api
+      .post(`/inventory/tanks/${tankId}/dip-readings`, payload)
+      .then((r) => r.data),
+
+  // ── Maintenance (Pump Downtime) ───────────────────────────────────
+  getDowntimes: (params?: {
+    org_id?: string;
+    pump_id?: string;
+    open_only?: boolean;
+    page?: number;
+    page_size?: number;
+  }) =>
+    api
+      .get<Paged<Downtime>>("/maintenance/downtime", { params })
+      .then((r) => r.data),
+  startDowntime: (payload: DowntimeStartPayload) =>
+    api.post<Downtime>("/maintenance/downtime/start", payload).then((r) => r.data),
+  endDowntime: (id: string, endedAt?: string) =>
+    api
+      .post<Downtime>(`/maintenance/downtime/${id}/end`, {
+        ended_at: endedAt,
+      })
+      .then((r) => r.data),
 };
