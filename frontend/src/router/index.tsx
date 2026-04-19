@@ -6,11 +6,12 @@ import {
   useLocation,
 } from "react-router-dom";
 import { ReactNode } from "react";
-import { LayoutDashboard } from "lucide-react";
 
 import { roleHomePath, useAuth, UserRole } from "../store/auth";
-import { PortalLayout } from "../components/layout/PortalLayout";
 import { ProviderLayout } from "../components/layout/ProviderLayout";
+import { AdminLayout } from "../components/layout/AdminLayout";
+import { ManagerLayout } from "../components/layout/ManagerLayout";
+import { WorkerLayout } from "../components/layout/WorkerLayout";
 
 import LandingPage from "../pages/landing/LandingPage";
 import LoginPage from "../pages/auth/LoginPage";
@@ -38,19 +39,30 @@ import PricingPage from "../pages/marketing/PricingPage";
 import HowItWorksPage from "../pages/marketing/HowItWorksPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
-function ProtectedRoute({
-  allowed,
-  children,
-}: {
-  allowed: UserRole[];
+/**
+ * Protect a subtree of routes. Redirect behaviour:
+ *   - not authenticated    → /login (or /provider for provider routes)
+ *   - wrong role           → their own role dashboard (via roleHomePath)
+ */
+export interface ProtectedRouteProps {
+  allowedRoles: UserRole[];
+  /** Where to send unauthenticated users. Defaults to /login. */
+  redirectTo?: string;
   children: ReactNode;
-}) {
+}
+
+export function ProtectedRoute({
+  allowedRoles,
+  redirectTo = "/login",
+  children,
+}: ProtectedRouteProps) {
   const { user, accessToken } = useAuth();
   const location = useLocation();
+
   if (!accessToken || !user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
-  if (!allowed.includes(user.role)) {
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to={roleHomePath(user.role)} replace />;
   }
   return <>{children}</>;
@@ -60,6 +72,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* ── Public ───────────────────────────────────────────────── */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -74,54 +87,68 @@ export function AppRouter() {
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/provider" element={<ProviderLoginPage />} />
 
+        {/* ── Admin portal ─────────────────────────────────────────── */}
         <Route
           element={
-            <ProtectedRoute allowed={["owner", "admin"]}>
-              <PortalLayout
-                title="Admin Portal"
-                nav={[{ to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard }]}
-              />
+            <ProtectedRoute allowedRoles={["owner", "admin"]}>
+              <AdminLayout />
             </ProtectedRoute>
           }
         >
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         </Route>
 
+        {/* ── Manager portal ───────────────────────────────────────── */}
         <Route
           element={
-            <ProtectedRoute allowed={["manager"]}>
-              <PortalLayout
-                title="Manager Portal"
-                nav={[{ to: "/manager/dashboard", label: "Dashboard", icon: LayoutDashboard }]}
-              />
+            <ProtectedRoute allowedRoles={["manager"]}>
+              <ManagerLayout />
             </ProtectedRoute>
           }
         >
-          <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
+          <Route
+            path="/manager/dashboard"
+            element={<ManagerDashboardPage />}
+          />
         </Route>
 
+        {/* ── Worker portal ────────────────────────────────────────── */}
         <Route
           element={
-            <ProtectedRoute allowed={["worker"]}>
-              <PortalLayout
-                title="Worker Portal"
-                nav={[{ to: "/worker/dashboard", label: "Dashboard", icon: LayoutDashboard }]}
-              />
+            <ProtectedRoute allowedRoles={["worker"]}>
+              <WorkerLayout />
             </ProtectedRoute>
           }
         >
-          <Route path="/worker/dashboard" element={<WorkerDashboardPage />} />
+          <Route
+            path="/worker/dashboard"
+            element={<WorkerDashboardPage />}
+          />
         </Route>
 
+        {/* ── Provider portal ──────────────────────────────────────── */}
         <Route
           element={
-            <ProtectedRoute allowed={["superadmin", "provider"]}>
+            <ProtectedRoute
+              allowedRoles={["superadmin", "provider"]}
+              redirectTo="/provider"
+            >
               <ProviderLayout />
             </ProtectedRoute>
           }
         >
           <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
-          <Route path="/provider/organizations" element={<OrganizationsPage />} />
+          {/* New canonical path — AGENT_FIX_PROMPT §252 */}
+          <Route path="/provider/tenants" element={<OrganizationsPage />} />
+          <Route
+            path="/provider/tenants/:id"
+            element={<OrganizationDetailPage />}
+          />
+          {/* Legacy alias — keep working during Stage 2 rename */}
+          <Route
+            path="/provider/organizations"
+            element={<Navigate to="/provider/tenants" replace />}
+          />
           <Route
             path="/provider/organizations/:id"
             element={<OrganizationDetailPage />}

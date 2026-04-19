@@ -30,8 +30,10 @@ from app.api.v1.pos_batch_settlements.routes import (
 )
 from app.api.v1.pumps.routes import router as pumps_router
 from app.api.v1.reconciliation.routes import router as reconciliation_router
+from app.api.v1.reports.routes import router as reports_router
 from app.api.v1.shifts.routes import router as shifts_router
 from app.api.v1.tenants.routes import router as tenants_router
+from app.api.v1.users.routes import router as users_router
 from app.api.v1.workers.routes import router as workers_router
 
 api_router = APIRouter()
@@ -65,6 +67,11 @@ api_router.include_router(
     workers_router,
     prefix="/workers",
     tags=["Workers"],
+)
+api_router.include_router(
+    users_router,
+    prefix="/users",
+    tags=["Users"],
 )
 api_router.include_router(
     shifts_router,
@@ -144,6 +151,11 @@ api_router.include_router(
     analytics_router,
     prefix="/analytics",
     tags=["Analytics"],
+)
+api_router.include_router(
+    reports_router,
+    prefix="/reports",
+    tags=["Reports"],
 )
 api_router.include_router(
     inventory_router,

@@ -89,8 +89,53 @@ export const accessRequestsApi = {
       .patch<AccessRequest>(`/provider/access-requests/${id}`, body)
       .then((r) => r.data),
 
+  approve: (id: string, notes?: string) =>
+    api
+      .patch<AccessRequest>(`/provider/access-requests/${id}`, {
+        status: "APPROVED",
+        provider_notes: notes,
+      })
+      .then((r) => r.data),
+
+  reject: (id: string, notes?: string) =>
+    api
+      .patch<AccessRequest>(`/provider/access-requests/${id}`, {
+        status: "REJECTED",
+        provider_notes: notes,
+      })
+      .then((r) => r.data),
+
   stats: () =>
     api
       .get<AccessRequestStats>("/provider/access-requests/stats")
+      .then((r) => r.data),
+
+  // Aliases matching the Stage 1 contract (§367)
+  getAccessRequests: (params?: {
+    status?: AccessRequestStatus | "";
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }) =>
+    api
+      .get<AccessRequestList>("/provider/access-requests", { params })
+      .then((r) => r.data),
+  getAccessRequest: (id: string) =>
+    api
+      .get<AccessRequest>(`/provider/access-requests/${id}`)
+      .then((r) => r.data),
+  approveAccessRequest: (id: string, notes?: string) =>
+    api
+      .patch<AccessRequest>(`/provider/access-requests/${id}`, {
+        status: "APPROVED",
+        provider_notes: notes,
+      })
+      .then((r) => r.data),
+  rejectAccessRequest: (id: string, notes?: string) =>
+    api
+      .patch<AccessRequest>(`/provider/access-requests/${id}`, {
+        status: "REJECTED",
+        provider_notes: notes,
+      })
       .then((r) => r.data),
 };

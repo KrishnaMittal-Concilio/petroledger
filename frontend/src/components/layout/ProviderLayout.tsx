@@ -34,17 +34,26 @@ export function ProviderLayout() {
   return (
     <PortalLayout
       title="Provider Portal"
+      theme="provider"
       nav={[
-        { to: "/provider/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          to: "/provider/dashboard",
+          label: "Dashboard",
+          icon: LayoutDashboard,
+        },
+        { to: "/provider/tenants", label: "Tenants", icon: Building2 },
+        {
+          to: "/provider/subscriptions",
+          label: "Subscriptions",
+          icon: CreditCard,
+        },
+        { to: "/provider/users", label: "Users", icon: Users },
         {
           to: "/provider/access-requests",
           label: "Access Requests",
           icon: Inbox,
           badge: newCount,
         },
-        { to: "/provider/organizations", label: "Organizations", icon: Building2 },
-        { to: "/provider/subscriptions", label: "Subscriptions", icon: CreditCard },
-        { to: "/provider/users", label: "Users", icon: Users },
         { to: "/provider/settings", label: "Settings", icon: Settings },
       ]}
     />
