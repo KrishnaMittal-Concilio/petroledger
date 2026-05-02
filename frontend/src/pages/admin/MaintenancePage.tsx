@@ -12,11 +12,12 @@ import { errMsg } from "../../lib/errMsg";
 
 
 const REASON_TYPES = [
-  "POWER_OUTAGE",
-  "EQUIPMENT_FAILURE",
-  "MAINTENANCE",
+  "SCHEDULED_MAINTENANCE",
+  "BREAKDOWN",
   "CALIBRATION",
-  "REFUEL_DELAY",
+  "POWER_OUTAGE",
+  "FUEL_SHORTAGE",
+  "SAFETY_INSPECTION",
   "OTHER",
 ];
 

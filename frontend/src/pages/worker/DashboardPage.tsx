@@ -67,7 +67,8 @@ export default function WorkerDashboardPage() {
     setLoading(true);
     try {
       const s = await shiftsApi.list({ status: "ACTIVE", page: 1, page_size: 1 });
-      const active = s.items[0] ?? null;
+      const sItems = Array.isArray(s) ? s : (s?.items ?? []);
+      const active = sItems[0] ?? null;
       setCurrentShift(active);
       const a = await safeGet<NozzleAssignment[]>(
         "/nozzle-assignments/my-active",

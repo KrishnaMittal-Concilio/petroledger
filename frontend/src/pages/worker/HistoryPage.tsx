@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { History } from "lucide-react";
 import { Badge } from "../../components/ui";
@@ -11,7 +10,6 @@ import { errMsg } from "../../lib/errMsg";
 
 
 export default function HistoryPage() {
-  const navigate = useNavigate();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -50,7 +48,6 @@ export default function HistoryPage() {
         data={shifts}
         loading={loading}
         rowKey={(s) => s.id}
-        onRowClick={(s) => navigate(`/admin/shifts/${s.id}`)}
         emptyState={
           <div className="flex flex-col items-center gap-2 text-slate-500">
             <History className="h-6 w-6 text-slate-400" />

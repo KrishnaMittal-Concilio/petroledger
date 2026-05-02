@@ -39,7 +39,8 @@ export default function MyShiftPage() {
         page: 1,
         page_size: 1,
       });
-      const active = (res.items[0] as ActiveShift | undefined) ?? null;
+      const items = Array.isArray(res) ? res : (res?.items ?? []);
+      const active = (items[0] as ActiveShift | undefined) ?? null;
       setShift(active);
       if (active) {
         const pump = await adminApi.getPump(active.pump_id).catch(() => null);

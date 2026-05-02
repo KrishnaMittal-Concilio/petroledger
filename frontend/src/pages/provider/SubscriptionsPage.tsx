@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Badge, Card } from "../../components/ui";
+import { errMsg } from "../../lib/errMsg";
 import { PageHeader } from "../../components/ui/PageHeader";
 import {
   providerApi,
@@ -83,7 +84,7 @@ export default function SubscriptionsPage() {
     providerApi
       .getSubscriptions()
       .then(setData)
-      .catch((e: Error) => toast.error(e?.message ?? "Failed to load"));
+      .catch((e: unknown) => toast.error(errMsg(e, "Failed to load subscriptions.")));
   }, []);
 
   const columns: SubscriptionGroup[] =
