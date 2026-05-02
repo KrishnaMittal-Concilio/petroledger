@@ -75,9 +75,9 @@ export default function AdminDashboardPage() {
     ? variances.reduce((acc, r) => acc + Number(r.total_variance ?? 0), 0)
     : null;
 
-  const activeShifts = shifts.filter((s) => s.status === "ACTIVE").length;
+  const activeShifts = shifts.filter((s) => s.status.toUpperCase() === "ACTIVE").length;
   const pendingRecon = shifts.filter(
-    (s) => s.status === "COMPLETED" && !s.end_time,
+    (s) => s.status.toUpperCase() === "COMPLETED" && !s.end_time,
   ).length;
 
   const kpis: KpiCard[] = [

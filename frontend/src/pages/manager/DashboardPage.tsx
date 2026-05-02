@@ -110,8 +110,8 @@ export default function ManagerDashboardPage() {
     }
   }
 
-  const activeShifts = shifts.filter((s) => s.status === "ACTIVE");
-  const pendingRecon = shifts.filter((s) => s.status === "COMPLETED").length;
+  const activeShifts = shifts.filter((s) => s.status.toUpperCase() === "ACTIVE");
+  const pendingRecon = shifts.filter((s) => s.status.toUpperCase() === "COMPLETED").length;
   const cashTotal = cash.reduce(
     (sum, c) => sum + Number(c.physical_cash ?? c.amount ?? 0),
     0,

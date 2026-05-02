@@ -131,7 +131,7 @@ export default function ManagerShiftsPage() {
             header: "",
             align: "right",
             render: (s) =>
-              s.status === "ACTIVE" ? (
+              s.status.toUpperCase() === "ACTIVE" ? (
                 <button
                   type="button"
                   onClick={(e) => {

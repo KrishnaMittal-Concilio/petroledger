@@ -57,8 +57,10 @@ export const shiftsApi = {
     api.post<Shift>("/shifts/", payload).then((r) => r.data),
 
   /** Close/complete a shift by setting end_time + status. */
-  closeShift: (shiftId: string, payload: ShiftUpdatePayload) =>
-    api.patch<Shift>(`/shifts/${shiftId}`, payload).then((r) => r.data),
+  closeShift: (shiftId: string, payload: ShiftUpdatePayload) => {
+    const p = payload.status ? { ...payload, status: payload.status.toLowerCase() } : payload;
+    return api.patch<Shift>(`/shifts/${shiftId}`, p).then((r) => r.data);
+  },
 
   /** List shifts with filters. */
   list: (params?: {

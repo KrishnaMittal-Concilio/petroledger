@@ -452,7 +452,7 @@ function ReconciliationTab({
         </Card>
       )}
 
-      {shift.status !== "LOCKED" && (
+      {shift.status.toUpperCase() !== "LOCKED" && (
         <Card>
           <h3 className="font-semibold mb-4 text-slate-900 flex items-center gap-2">
             <RefreshCw className="h-4 w-4" /> Run reconciliation
