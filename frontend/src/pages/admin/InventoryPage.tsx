@@ -5,14 +5,11 @@ import { Badge, Button, Card, Input } from "../../components/ui";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { Spinner } from "../../components/ui/Spinner";
+import { SkeletonCard } from "../../components/ui/Skeleton";
 import { adminApi, Tank } from "../../api/admin";
 import { useOrgStore, useEnsureOrgs } from "../../store/org";
+import { errMsg } from "../../lib/errMsg";
 
-function errMsg(err: unknown, fallback: string): string {
-  const e = err as { response?: { data?: { detail?: string } }; message?: string };
-  return e?.response?.data?.detail || e?.message || fallback;
-}
 
 function levelTone(pct: number): "green" | "amber" | "red" {
   if (pct >= 50) return "green";
@@ -60,9 +57,11 @@ export default function InventoryPage() {
       />
 
       {loading ? (
-        <Card>
-          <Spinner label="Loading tanks…" />
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+        </div>
       ) : tanks.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center gap-2 py-8 text-slate-500">

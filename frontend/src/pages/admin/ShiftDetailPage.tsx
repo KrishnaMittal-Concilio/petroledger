@@ -14,7 +14,7 @@ import {
 import { Badge, Button, Card } from "../../components/ui";
 import { Input } from "../../components/ui";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { Spinner } from "../../components/ui/Spinner";
+import { SkeletonCard, SkeletonList } from "../../components/ui/Skeleton";
 import { adminApi, Shift, ReconciliationResult, AnomalyFlag } from "../../api/admin";
 import {
   shiftsApi,
@@ -24,13 +24,10 @@ import {
   UpiTransaction,
 } from "../../api/shifts";
 import { statusBadgeTone } from "./ShiftsPage";
+import { errMsg } from "../../lib/errMsg";
 
 type Tab = "overview" | "readings" | "payments" | "reconciliation" | "anomalies";
 
-function errMsg(err: unknown, fallback: string): string {
-  const e = err as { response?: { data?: { detail?: string } }; message?: string };
-  return e?.response?.data?.detail || e?.message || fallback;
-}
 
 function toNum(v: string | number | null | undefined): number {
   if (v === null || v === undefined) return 0;
@@ -105,8 +102,10 @@ export default function ShiftDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-10">
-        <Spinner label="Loading shift…" />
+      <div className="space-y-4">
+        <SkeletonCard lines={3} />
+        <SkeletonCard lines={6} />
+        <SkeletonCard lines={4} />
       </div>
     );
   }
@@ -542,11 +541,7 @@ function AnomaliesTab({
   }
 
   if (loading) {
-    return (
-      <div className="py-6">
-        <Spinner label="Loading anomalies…" />
-      </div>
-    );
+    return <SkeletonList rows={4} />;
   }
   if (anomalies.length === 0) {
     return (

@@ -8,11 +8,8 @@ import { DataTable, Pagination } from "../../components/ui/DataTable";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { adminApi, InviteManagerResponse, Pump, Worker } from "../../api/admin";
 import { useOrgStore, useEnsureOrgs } from "../../store/org";
+import { errMsg } from "../../lib/errMsg";
 
-function errMsg(err: unknown, fallback: string): string {
-  const e = err as { response?: { data?: { detail?: string } }; message?: string };
-  return e?.response?.data?.detail || e?.message || fallback;
-}
 
 export default function WorkersPage() {
   const { selectedOrgId } = useOrgStore();
@@ -189,6 +186,7 @@ export default function WorkersPage() {
         open={createOpen}
         pumps={pumps}
         orgId={selectedOrgId}
+        workerCount={total}
         onClose={() => setCreateOpen(false)}
         onCreated={() => {
           setCreateOpen(false);
@@ -345,27 +343,38 @@ function InviteManagerModal({
   );
 }
 
+function generateEmpCode(count: number): string {
+  return `EMP-${String(count + 1).padStart(3, "0")}`;
+}
+
 function CreateWorkerModal({
   open,
   pumps,
   orgId,
+  workerCount,
   onClose,
   onCreated,
 }: {
   open: boolean;
   pumps: Pump[];
   orgId: string | null;
+  workerCount: number;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [employeeCode, setEmployeeCode] = useState("");
+  const [employeeCode, setEmployeeCode] = useState(() => generateEmpCode(workerCount));
   const [pumpId, setPumpId] = useState("");
   const [joinedDate, setJoinedDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
   const [busy, setBusy] = useState(false);
+
+  // Refresh generated code whenever the modal opens
+  useEffect(() => {
+    if (open) setEmployeeCode(generateEmpCode(workerCount));
+  }, [open, workerCount]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -447,6 +456,7 @@ function CreateWorkerModal({
             value={employeeCode}
             onChange={(e) => setEmployeeCode(e.target.value)}
             placeholder="EMP-001"
+            hint="Auto-generated — edit if needed"
           />
           <Select
             label="Pump"

@@ -20,13 +20,14 @@ import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { Spinner } from "../../components/ui/Spinner";
+import { SkeletonCard, SkeletonList } from "../../components/ui/Skeleton";
 import {
   providerApi,
   TenantDetail,
   TenantFeatureItem,
   PaymentConfigResponse,
 } from "../../api/provider";
+import { errMsg } from "../../lib/errMsg";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -72,10 +73,6 @@ const GATEWAYS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function errMsg(err: unknown, fallback: string): string {
-  const e = err as { response?: { data?: { detail?: string } }; message?: string };
-  return e?.response?.data?.detail || e?.message || fallback;
-}
 
 // ── Tab button ─────────────────────────────────────────────────────────────
 
@@ -320,8 +317,10 @@ export default function TenantDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-10">
-        <Spinner label="Loading tenant…" />
+      <div className="space-y-4">
+        <SkeletonCard lines={3} />
+        <SkeletonCard lines={5} />
+        <SkeletonCard lines={4} />
       </div>
     );
   }
@@ -568,7 +567,7 @@ export default function TenantDetailPage() {
           </div>
 
           {featuresLoading && features.length === 0 ? (
-            <Spinner label="Loading features…" />
+            <SkeletonList rows={6} />
           ) : (
             modules.map((mod) => (
               <Card key={mod}>
@@ -649,7 +648,7 @@ export default function TenantDetailPage() {
         <div className="space-y-4">
           {/* Status banner */}
           {payLoading && !payConfig ? (
-            <Spinner label="Loading payment config…" />
+            <SkeletonCard lines={5} />
           ) : (
             <>
               <div
