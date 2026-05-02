@@ -68,8 +68,10 @@ export const shiftsApi = {
     status?: string;
     page?: number;
     page_size?: number;
-  }) =>
-    api.get<Paged<Shift>>("/shifts/", { params }).then((r) => r.data),
+  }) => {
+    const p = params ? { ...params, status: params.status?.toLowerCase() } : params;
+    return api.get<Paged<Shift>>("/shifts/", { params: p }).then((r) => r.data);
+  },
 
   /** Fetch one shift. */
   get: (id: string) => api.get<Shift>(`/shifts/${id}`).then((r) => r.data),

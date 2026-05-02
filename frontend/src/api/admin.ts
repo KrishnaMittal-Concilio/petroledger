@@ -273,10 +273,10 @@ export const adminApi = {
     api.delete(`/workers/${id}`).then((r) => r.data),
 
   // ── Shifts ────────────────────────────────────────────────────────
-  getShifts: (params?: ShiftListQuery) =>
-    api
-      .get<Paged<Shift>>("/shifts/", { params })
-      .then((r) => r.data),
+  getShifts: (params?: ShiftListQuery) => {
+    const p = params ? { ...params, status: params.status?.toLowerCase() } : params;
+    return api.get<Paged<Shift>>("/shifts/", { params: p }).then((r) => r.data);
+  },
   getShift: (id: string) =>
     api.get<Shift>(`/shifts/${id}`).then((r) => r.data),
 
@@ -292,7 +292,7 @@ export const adminApi = {
   }) =>
     api
       .get<Paged<Shift>>("/shifts/", {
-        params: { status: "COMPLETED", ...params },
+        params: { status: "completed", ...params },
       })
       .then((r) => r.data),
   runReconciliation: (shiftId: string, actualCash: number) =>
