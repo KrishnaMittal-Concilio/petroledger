@@ -83,6 +83,25 @@ export interface WorkerUpdatePayload {
 }
 
 /* ----------------------------------------------------------------------
+ * Managers (invite flow)
+ * -------------------------------------------------------------------- */
+
+export interface InviteManagerPayload {
+  full_name: string;
+  email: string;
+  phone: string;
+  org_id: string;
+}
+
+export interface InviteManagerResponse {
+  user_id: string;
+  email: string;
+  role: string;
+  temporary_password: string;
+  message: string;
+}
+
+/* ----------------------------------------------------------------------
  * Shifts / Reconciliation / Anomalies / Audit
  * -------------------------------------------------------------------- */
 
@@ -271,6 +290,14 @@ export const adminApi = {
     api.patch<Worker>(`/workers/${id}`, payload).then((r) => r.data),
   deleteWorker: (id: string) =>
     api.delete(`/workers/${id}`).then((r) => r.data),
+
+  inviteManager: (payload: InviteManagerPayload) =>
+    api
+      .post<InviteManagerResponse>("/tenants/invite-user", {
+        ...payload,
+        role: "manager",
+      })
+      .then((r) => r.data),
 
   // ── Shifts ────────────────────────────────────────────────────────
   getShifts: (params?: ShiftListQuery) =>

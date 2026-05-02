@@ -139,6 +139,12 @@ class Settings(BaseSettings):
 
     INVITE_EXPIRY_HOURS: int = Field(default=48, description="Invite expiry in hours")
 
+    # ── GenAI / Groq ────────────────────────────────────────────────────
+    GROQ_API_KEY: str = Field(
+        default="",
+        description="Groq API key for LLM-based reconciliation narration. Leave blank to disable.",
+    )
+
     # ── Celery ──────────────────────────────────────────────────────────
     CELERY_BROKER_URL: str = Field(
         default="",

@@ -76,4 +76,7 @@ class ReconciliationResponse(BaseModel):
     variance_notes: str | None = None
     reason_set_by_user_id: UUID | None = None
     reason_set_at: datetime | None = None
+    narration_summary: str | None = Field(
+        None, description="AI-generated plain-English summary of this reconciliation."
+    )
     created_at: datetime

@@ -85,6 +85,9 @@ class ReconciliationResult(UUIDMixin, TimestampMixin, Base):
         JSON, nullable=True
     )
 
+    # ── AI narration ────────────────────────────────────────────────────
+    narration_summary: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+
     # ── Variance classification (Task 2.8) ──────────────────────────────
     variance_reason: Mapped[str | None] = mapped_column(String(50), nullable=True)
     variance_notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)

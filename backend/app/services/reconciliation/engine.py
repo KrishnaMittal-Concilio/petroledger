@@ -38,6 +38,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models.fms import (
     FleetTransaction,
@@ -54,6 +55,7 @@ from app.schemas.reconciliation import (
     ReconciliationResponse,
 )
 from app.services.ml.feature_engineering import FeatureEngineeringService
+from app.services.ml.narration import NarrationService
 from app.services.reconciliation.anomaly import AnomalyDetectionService
 from app.services.reconciliation.confidence import ConfidenceScoringService
 
@@ -70,6 +72,8 @@ class ReconciliationEngine:
         self._anomaly_svc = AnomalyDetectionService()
         self._confidence_svc = ConfidenceScoringService()
         self._feature_svc = FeatureEngineeringService()
+        _settings = get_settings()
+        self._narration_svc = NarrationService(api_key=_settings.GROQ_API_KEY)
 
     # ------------------------------------------------------------------
     # Public API
@@ -202,12 +206,29 @@ class ReconciliationEngine:
 
         await db.refresh(result)
 
+        # ── 7. Generate AI narration ─────────────────────────────────────
+        narration_context = {
+            "shift_id": str(shift_id),
+            "status": recon_status.value,
+            "expected_cash": float(expected_cash),
+            "actual_cash": float(actual_cash_q),
+            "variance": float(variance),
+            "confidence_score": float(breakdown.overall_score) if breakdown else None,
+            "anomalies": [a.model_dump() for a in anomalies],
+            "grade_breakdown": grade_breakdown,
+        }
+        narration = self._narration_svc.narrate(narration_context)
+        if narration:
+            result.narration_summary = narration
+            await db.flush()
+
         logger.info(
-            "Reconciliation complete | shift=%s status=%s variance=%.2f confidence=%s",
+            "Reconciliation complete | shift=%s status=%s variance=%.2f confidence=%s narration=%s",
             shift_id,
             recon_status.value,
             variance,
             breakdown.overall_score if breakdown else "n/a",
+            "yes" if narration else "no",
         )
 
         return ReconciliationResponse(
@@ -225,6 +246,7 @@ class ReconciliationEngine:
             variance_notes=result.variance_notes,
             reason_set_by_user_id=result.reason_set_by_user_id,
             reason_set_at=result.reason_set_at,
+            narration_summary=result.narration_summary,
             created_at=result.created_at,
         )
 
@@ -266,6 +288,7 @@ class ReconciliationEngine:
             variance_notes=row.variance_notes,
             reason_set_by_user_id=row.reason_set_by_user_id,
             reason_set_at=row.reason_set_at,
+            narration_summary=row.narration_summary,
             created_at=row.created_at,
         )
 
